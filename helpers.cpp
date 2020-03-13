@@ -38,7 +38,7 @@ int sum(vector<int> vec){
 	return s;
 }
 
-size_t nChoosek(size_t n, size_t k) {
+size_t nChoosek_with_limit(size_t n, size_t k) {
 	if (k > n) return 0;
 	if (k * 2 > n) k = n-k;
 	if (k == 0) return 1;
@@ -47,6 +47,9 @@ size_t nChoosek(size_t n, size_t k) {
 	for(size_t i = 2; i <= k; ++i ) {
 		result *= (n-i+1);
 		result /= i;
+		if(result > (2 << 28)){
+			return (2 << 28);
+		}
 	}
 	return result;
 }
@@ -124,3 +127,4 @@ vector<int> getOptionsConsensus(vector<int> con, size_t n, vector<int> prefilled
 	}
 	return result;
 }
+

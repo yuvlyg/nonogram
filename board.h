@@ -6,12 +6,12 @@ class Board {
 public:
 	Board(vector<vector<int>> con_cols, vector<vector<int>> con_rows);
 	void print();
+	void printSolution();
 	bool solve();
 private:
 	size_t numUnknowns();
 	size_t chooseIndexToSolve(bool columns);
         void setCol(vector<int> col, size_t idx);
-	void shouldCheckAll();
 	bool hasCheckedAll();
 	vector<int> getCol(size_t idx);
 

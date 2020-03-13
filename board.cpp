@@ -8,7 +8,7 @@
 size_t getNCombinations(vector<int> con, size_t n){
 	n = n - sum(con) + con.size();  // if there were con.size 1s
 	n = n - con.size() + 1;  // if adjacent blocks were allowed
-	return nChoosek(n, con.size());
+	return nChoosek_with_limit(n, con.size());
 }
 
 Board::Board(vector<vector<int>> con_cols, vector<vector<int>> con_rows){
@@ -16,7 +16,7 @@ Board::Board(vector<vector<int>> con_cols, vector<vector<int>> con_rows){
        	m_n_rows = con_rows.size();
 	m_con_cols = con_cols;
 	m_con_rows = con_rows;
-
+        cout << m_n_cols << ", " << m_n_rows << std::endl;
 	vector<int> tmp(m_n_cols, UNKNOWN);
 	m_matrix = vector<vector<int>>(m_n_rows, tmp);
 
@@ -31,16 +31,10 @@ Board::Board(vector<vector<int>> con_cols, vector<vector<int>> con_rows){
 	for(size_t i=0; i<m_n_rows; i++){
 		m_combinations_rows[i] = getNCombinations(con_rows[i], m_n_cols);
 	}
+	printVec(m_combinations_cols);
+	printVec(m_combinations_rows);
 }
 
-void Board::shouldCheckAll(){
-	for(size_t i=0; i<m_n_cols; i++){
-		m_should_check_cols[i] = true;
-	}
-	for(size_t i=0; i<m_n_rows; i++){
-		m_should_check_rows[i] = true;
-	}
-}
 
 bool Board::hasCheckedAll(){
 	for(size_t i=0; i<m_n_cols; i++){
@@ -84,6 +78,20 @@ size_t Board::numUnknowns(){
 	return num;
 }
 
+void Board::printSolution(){
+	for(size_t i=0; i < m_n_rows; i++){
+		for(size_t j=0; j < m_n_cols; j++){
+			if(m_matrix[i][j] == EMPTY){
+				std::cout << " ";
+			} else if(m_matrix[i][j] == FULL){
+				std::cout << "X";
+			} else {
+				std::cout << " ";
+			}
+		}
+		std::cout << std::endl;
+	}
+}
 
 void Board::print(){
 	size_t rows_before_board = maxLen(m_con_cols);
@@ -169,50 +177,83 @@ size_t Board::chooseIndexToSolve(bool columns){
 	}
 	return 0;	
 }
+
+vector<vector<int>> vectorFromTextFile(char * file_path){
 	
+	std::ifstream infile(file_path);
+	std::string line;
+	vector<vector<int>> result;
+	vector<int> tmp;
+	while (std::getline(infile, line)) {
+		int i = stoi(line);
+		if(i != -1){
+			tmp.push_back(i);
+		} else {	
+			result.push_back(tmp);
+			tmp = vector<int>();
+		}
+	}
+	infile.close();
+	//printVecs(result);
+	return result;
+}
+
+Board boardFromTextFiles(char * cols_path, char * rows_path){
+	vector<vector<int>> con_cols = vectorFromTextFile(cols_path);
+	vector<vector<int>> con_rows = vectorFromTextFile(rows_path);
+	Board b(con_cols, con_rows);
+	return b;
+}
 
 bool Board::solve(){
 	while(numUnknowns() > 0){
 		size_t idx = chooseIndexToSolve(false);
-		std::cout << "solving row " << idx << std::endl;
+		std::cout << "solving row " << idx << ". " << m_combinations_rows[idx] << std::endl;
 		vector<int> row = getOptionsConsensus(m_con_rows[idx], m_n_cols, m_matrix[idx]);
 		if(row == m_matrix[idx]){
 			m_should_check_rows[idx] = false;
 		} else {
+			for(size_t i=0; i < row.size(); i++){
+				if(row[i] != m_matrix[idx][i]){
+					m_should_check_cols[i] = true;
+				}
+			}
 			m_matrix[idx] = row;
-			shouldCheckAll();
-			print();
 		}
 
 		idx = chooseIndexToSolve(true);
-		std::cout << "solving column " << idx << std::endl;
-		vector<int> col = getOptionsConsensus(m_con_cols[idx], m_n_rows, getCol(idx));
-		if(col == getCol(idx)){
+		std::cout << "solving col" << idx << ". " << m_combinations_cols[idx] << std::endl;
+		vector<int> current_col = getCol(idx);
+		vector<int> col = getOptionsConsensus(m_con_cols[idx], m_n_rows, current_col);
+		if(col == current_col){
 			m_should_check_cols[idx] = false;
 		} else {
 			setCol(col, idx);
-			shouldCheckAll();
-			print();
+			for(size_t i=0; i < col.size(); i++){
+				if(col[i] != current_col[i]){
+					m_should_check_rows[i] = true;
+				}
+			}
+			printSolution();
 		}
 		if(hasCheckedAll()){
+			print();
 			return false;
 		}
 	}
+	printSolution();
 	return true;
 }
 
 
 int main(int argc, char** argv){
-	vector<vector<int>> con_cols = {{1}, {5}, {1, 1}, {3}, {1}};
-	vector<vector<int>> con_rows = {{3}, {1, 1}, {3}, {1}, {2, 1}};
-	size_t n = 16;
-	vector<int> prefilled(16, UNKNOWN);
-	prefilled[1] = FULL;
-	Board b(con_cols, con_rows);
-	//b.print();
+	std::cout << SIZE_MAX;
+	if(argc != 3){
+		cout << "Usage: " << argv[0] << " cols.txt rows.txt" << std::endl;
+		return -1;
+	}
+	Board b = boardFromTextFiles(argv[1], argv[2]);
+	b.print();
 	b.solve();
-	//vector<int> con = {3,10};
-	//printVecs(getOptions(con, 16, prefilled));
-	//printVec(getOptionsConsensus(con, 16, prefilled));
 	return 0;
 }
