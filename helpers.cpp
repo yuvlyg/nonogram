@@ -12,6 +12,14 @@ void printVec(vector<int> vec){
 	std::cout << std::endl;
 }
 
+void printVec(vector<bool> vec){
+	std::cout << "printVec: ";
+	for(size_t i=0 ; i < vec.size() ; i++){
+		std::cout << vec[i]  << " ";
+	}
+	std::cout << std::endl;
+}
+
 void printVecs(vector<vector<int>> vec){
 	for(size_t i=0; i < vec.size(); i++){
 		printVec(vec[i]);
@@ -19,15 +27,20 @@ void printVecs(vector<vector<int>> vec){
 	std::cout << std::endl;
 }
 
+size_t min(size_t a, size_t b){
+	if(a < b){
+		return a;
+	}
+	return b;
+}
 
 bool doesMatch(vector<int> option, vector<int> prefilled){
-	bool accept = true;
 	for(size_t j=0; j < option.size(); j++){
 		if((prefilled[j] != UNKNOWN) & (prefilled[j] != option[j])){
-			accept = false;
+			return false;
 		}
 	}
-	return accept;
+	return true;
 }
 
 int sum(vector<int> vec){
@@ -111,8 +124,9 @@ vector<vector<int>> getOptions(vector<int> con, size_t n, vector<int> prefilled)
 	return results;
 }
 
-vector<int> getOptionsConsensus(vector<int> con, size_t n, vector<int> prefilled){
+vector<int> getOptionsConsensus(vector<int> con, size_t n, vector<int> prefilled, int * o_n_options){
 	vector<vector<int>> options = getOptions(con, n, prefilled);
+	*o_n_options = options.size();
 	if(options.size() == 0){
 		vector<int> result(n, UNKNOWN);
 		return result;

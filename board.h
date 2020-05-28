@@ -7,13 +7,17 @@ public:
 	Board(vector<vector<int>> con_cols, vector<vector<int>> con_rows);
 	void print();
 	void printSolution();
+	void setCellAndUpdate(size_t row, size_t col, int val);
 	bool solve();
+	bool solveBacktracking();
+
 private:
 	size_t numUnknowns();
-	size_t chooseIndexToSolve(bool columns);
+	int chooseIndexToSolve(bool columns);
         void setCol(vector<int> col, size_t idx);
 	bool hasCheckedAll();
 	vector<int> getCol(size_t idx);
+	void updateNCombinations(bool init);
 
 	vector<vector <int>> m_matrix;
 	size_t m_n_cols; 
