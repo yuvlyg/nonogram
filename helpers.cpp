@@ -124,6 +124,26 @@ vector<vector<int>> getOptions(vector<int> con, size_t n, vector<int> prefilled)
 	return results;
 }
 
+size_t maxLen(vector<vector<int>> vecs){
+	size_t result = 0;
+	for(size_t i = 0; i < vecs.size(); i++){
+		if(vecs[i].size() > result){
+			result = vecs[i].size();
+		}
+	}
+	return result;
+}
+
+size_t numUnknownsVec(vector<int> vec){
+	size_t num = 0;
+	for(size_t j=0; j<vec.size(); j++){
+		if(vec[j] == UNKNOWN){
+			num++;
+		}
+	}
+	return num;
+}
+
 vector<int> getOptionsConsensus(vector<int> con, size_t n, vector<int> prefilled, int * o_n_options){
 	vector<vector<int>> options = getOptions(con, n, prefilled);
 	*o_n_options = options.size();

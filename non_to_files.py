@@ -1,12 +1,12 @@
 
 import sys
 
-def main(path):
+def main(non_file_path):
     cols = []
     rows = []
-    non_file = open(path)
-    output = None
-    for line in non_file:
+    output = None  # will be either cols or rows, depending on header
+
+    for line in open(non_file_path):
         if not line.strip():
             continue
         if line.strip().startswith('goal'):
@@ -17,7 +17,9 @@ def main(path):
             output = rows
         else:
             if output is not None:
-                output.append(line.strip().split(','))
+                constrains = line.strip().split(',')
+                assert all([elm.isdigit() for elm in constrains])
+                output.append(constrains)
     open('cols.txt', 'w').write(encode(cols))
     open('rows.txt', 'w').write(encode(rows))
 

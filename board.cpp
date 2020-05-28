@@ -6,27 +6,6 @@
 #include "board.h"
 #include "helpers.cpp"
 
-size_t getNCombinations(vector<int> con, size_t n){
-	n = n - sum(con) + con.size();  // if there were con.size 1s
-	n = n - con.size() + 1;  // if adjacent blocks were allowed
-	return nChoosek_with_limit(n, con.size());
-}
-
-size_t getNCombinations_heuristic(vector<int> con, size_t n, size_t n_unknowns){
-	n = min(n, sum(con) + con.size() + n_unknowns);
-	return getNCombinations(con, n);
-}
-
-size_t numUnknownsVec(vector<int> vec){
-	size_t num = 0;
-	for(size_t j=0; j<vec.size(); j++){
-		if(vec[j] == UNKNOWN){
-			num++;
-		}
-	}
-	return num;
-}
-
 Board::Board(vector<vector<int>> con_cols, vector<vector<int>> con_rows){
 	m_n_cols = con_cols.size();
        	m_n_rows = con_rows.size();
@@ -45,6 +24,21 @@ Board::Board(vector<vector<int>> con_cols, vector<vector<int>> con_rows){
 	printVec(m_combinations_cols);
 	printVec(m_combinations_rows);
 }
+
+/////////////////
+//  Utilities  //
+/////////////////
+size_t getNCombinations(vector<int> con, size_t n){
+	n = n - sum(con) + con.size();  // if there were con.size 1s
+	n = n - con.size() + 1;  // if adjacent blocks were allowed
+	return nChoosek_with_limit(n, con.size());
+}
+
+size_t getNCombinations_heuristic(vector<int> con, size_t n, size_t n_unknowns){
+	n = min(n, sum(con) + con.size() + n_unknowns);
+	return getNCombinations(con, n);
+}
+
 
 void Board::updateNCombinations(bool init){
 	size_t n;
@@ -79,16 +73,6 @@ bool Board::hasCheckedAll(){
 		}
 	}
 	return true;
-}
-
-size_t maxLen(vector<vector<int>> vecs){
-	size_t result = 0;
-	for(size_t i = 0; i < vecs.size(); i++){
-		if(vecs[i].size() > result){
-			result = vecs[i].size();
-		}
-	}
-	return result;
 }
 
 size_t Board::numUnknowns(){
@@ -166,6 +150,47 @@ vector<int> Board::getCol(size_t idx){
 	return res;
 }
 
+void Board::setCellAndUpdate(size_t row_idx, size_t col_idx, int val){
+	if(m_matrix[row_idx][col_idx] != UNKNOWN){
+		cout << "warning, setting a known value" << endl;
+		throw;
+	}
+	m_matrix[row_idx][col_idx] = val;
+	m_should_check_rows[row_idx] = true;
+	m_should_check_cols[col_idx] = true;
+}
+
+vector<vector<int>> vectorFromTextFile(char * file_path){
+	std::ifstream infile(file_path);
+	std::string line;
+	vector<vector<int>> result;
+	vector<int> tmp;
+
+	while (std::getline(infile, line)) {
+		int i = stoi(line);
+		if(i != -1){
+			tmp.push_back(i);
+		} else {	
+			result.push_back(tmp);
+			tmp = vector<int>();
+		}
+	}
+	infile.close();
+	return result;
+}
+
+Board boardFromTextFiles(char * cols_path, char * rows_path){
+	vector<vector<int>> con_cols = vectorFromTextFile(cols_path);
+	vector<vector<int>> con_rows = vectorFromTextFile(rows_path);
+	Board b(con_cols, con_rows);
+	return b;
+}
+
+
+
+/////////////////////
+// Logic - solving //
+/////////////////////
 
 int Board::chooseIndexToSolve(bool columns){
 	vector<int> combs;
@@ -177,8 +202,7 @@ int Board::chooseIndexToSolve(bool columns){
 		combs = m_combinations_rows;
 		should_check = &m_should_check_rows;
 	}
-	//cout << "should check: ";
-	//printVec(*should_check);
+
 	vector<int> vec(combs.size());
 	int x=0;
 	std::iota(vec.begin(), vec.end(), x++); //Initializing
@@ -186,7 +210,6 @@ int Board::chooseIndexToSolve(bool columns){
 	vector<int> candidate_vec;
         for(size_t i=0; i < vec.size(); i++){
 		size_t idx = vec[i];
-		//cout << "idx: " << idx << ", combs: " << combs[idx] << ", should check: " << (*should_check)[idx] << endl;
 		if(!(*should_check)[idx]){
 			continue;
 		}
@@ -195,9 +218,7 @@ int Board::chooseIndexToSolve(bool columns){
 		} else {
 			candidate_vec = m_matrix[idx];
 		}
-		//cout << "num unknowns: " << numUnknownsVec(candidate_vec) << endl;
 		if(numUnknownsVec(candidate_vec) > 0){
-			//cout << "found an index: " << idx << endl; 
 			return idx;
 	        } else {
 			(*should_check)[idx] = false;
@@ -205,94 +226,6 @@ int Board::chooseIndexToSolve(bool columns){
 	}
 	cout << "didn't find a index to solve. columns:" << columns << endl;
 	return -1;
-}
-
-vector<vector<int>> vectorFromTextFile(char * file_path){
-	
-	std::ifstream infile(file_path);
-	std::string line;
-	vector<vector<int>> result;
-	vector<int> tmp;
-	while (std::getline(infile, line)) {
-		int i = stoi(line);
-		if(i != -1){
-			tmp.push_back(i);
-		} else {	
-			result.push_back(tmp);
-			tmp = vector<int>();
-		}
-	}
-	infile.close();
-	//printVecs(result);
-	return result;
-}
-
-Board boardFromTextFiles(char * cols_path, char * rows_path){
-	vector<vector<int>> con_cols = vectorFromTextFile(cols_path);
-	vector<vector<int>> con_rows = vectorFromTextFile(rows_path);
-	Board b(con_cols, con_rows);
-	return b;
-}
-
-void Board::setCellAndUpdate(size_t row_idx, size_t col_idx, int val){
-	if(m_matrix[row_idx][col_idx] != UNKNOWN){
-		cout << "warning, setting a known value" << endl;
-		throw;
-	}
-	m_matrix[row_idx][col_idx] = val;
-	m_should_check_rows[row_idx] = true;
-	m_should_check_cols[col_idx] = true;
-}
-
-bool Board::solveBacktracking(){
-	cout << "solveBacktracking" << endl;
-	print();
-	size_t i, j;
-	int n_options;
-	// check validity TODO remove because will take forever
-	for(i=0; i < m_n_rows; i++){
-		getOptionsConsensus(m_con_rows[i], m_n_cols, m_matrix[i], &n_options);
-		if(n_options == 0){
-			return false;
-		}
-	}
-	for(i=0; i < m_n_cols; i++){
-		getOptionsConsensus(m_con_cols[i], m_n_rows, getCol(i), &n_options);
-		if(n_options == 0){
-			return false;
-		}
-	}
-
-	bool found_unknown = false;
-	// find first unknown
-	for(i=0; i < m_n_rows; i++){
-		m_matrix[i] = getOptionsConsensus(m_con_rows[i], m_n_cols, m_matrix[i], &n_options);
-		for(j=0; j<m_n_cols; j++){
-			if(m_matrix[i][j] == UNKNOWN){
-				found_unknown = true;
-				break;
-			}
-		}
-		if(found_unknown){
-			break;
-		}
-	}
-	if(!found_unknown){
-		print();
-		return true;
-	}
-	
-	vector<int> val = {FULL, EMPTY};
-	size_t idx;
-	for(idx=0; idx<2; idx++){
-		std::cout << "calling recursion " << val[idx] << endl;
-		Board b = *this;
-		b.setCellAndUpdate(i, j, val[idx]);
-		if(b.solveBacktracking()){
-			return true;
-		}
-	}
-	return false;
 }
 
 bool Board::solve(){

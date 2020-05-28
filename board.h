@@ -9,7 +9,6 @@ public:
 	void printSolution();
 	void setCellAndUpdate(size_t row, size_t col, int val);
 	bool solve();
-	bool solveBacktracking();
 
 private:
 	size_t numUnknowns();
